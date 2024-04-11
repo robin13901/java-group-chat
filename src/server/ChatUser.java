@@ -1,5 +1,6 @@
 package server;
 
+import java.awt.*;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -9,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ChatUser extends Thread {
+    private Print print;
     private String userName;
     private String userEmail;
     private String userIp;
@@ -19,6 +21,7 @@ public class ChatUser extends Thread {
     private volatile boolean isRunning = true;
 
     public ChatUser(String name, String email, String ip, int port) {
+        print = Print.getInstance();
         this.userName = name;
         this.userEmail = email;
         this.userIp = ip;
@@ -44,8 +47,8 @@ public class ChatUser extends Thread {
                     break;
                 }
 
-                System.out.println(this.userName + ": " + message);
-                Server.broadcastMessage(this.userName + ": " + message);
+                System.out.println(print.color(this.userName + ": ", Color.ORANGE) + message);
+                Server.broadcastMessage(print.color(this.userName + ": ", Color.ORANGE) + message);
 
             } catch (IOException ex) {
                 System.out.println(this.getUserName() + " disconnected.");

@@ -1,5 +1,6 @@
 package server;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -14,9 +15,10 @@ public class Server {
     public static MessageQueue messageQueue = new MessageQueue();
     private static Admin admin;
     private static Registrar registrar;
+    private static Print print;
 
     public static void main(String[] args) {
-
+        print = Print.getInstance();
         registrar = new Registrar();
         Thread registrationThread = new Thread(registrar);
         registrationThread.start();
@@ -37,7 +39,7 @@ public class Server {
         Thread userThread = new Thread(newUser);
         userList.add(newUser);
         userThread.start();
-        broadcastMessage(userName + " has connected.");
+        broadcastMessage(print.bold(print.color(userName + " has connected.", Color.GREEN)));
     }
 
     static void broadcastMessage(String message) throws IOException {
@@ -49,7 +51,7 @@ public class Server {
 
     static void removeUser(ChatUser userToRemove) throws IOException {
         String userName = userToRemove.getUserName();
-        broadcastMessage(userName + " disconnected from the chat.");
+        broadcastMessage(print.bold(print.color(userName + " disconnected from the chat.", Color.RED)));
         userToRemove.stopUser();
         userList.remove(userToRemove);
     }
