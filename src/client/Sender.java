@@ -1,10 +1,13 @@
 package client;
 
+import java.awt.Color;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import util.Print;
 
 public class Sender extends Thread {
 
@@ -12,10 +15,12 @@ public class Sender extends Thread {
     private volatile boolean shouldRun = true;
     private KeyStore keyStore;
     private User myUser;
+    private Print print;
 
     public Sender(User myUser) {
         this.keyStore = myUser.getKeyStore();
         this.myUser = myUser;
+        this.print = Print.getInstance();
     }
 
     public void run() {
@@ -23,6 +28,10 @@ public class Sender extends Thread {
             outputStream = new DataOutputStream(Client.socket.getOutputStream());
             while (shouldRun) {
                 String message = scanner.nextLine();
+                if (message.isEmpty()) {
+                    System.out.println(print.bold(print.color("Empty messages not support!", Color.red)));
+                    continue;
+                }
                 OutboundMessage outboundMessage = new OutboundMessage(message, myUser.getName());
 
                 String packedMsg = outboundMessage.packMsg(keyStore);
