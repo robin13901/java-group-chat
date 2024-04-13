@@ -32,6 +32,10 @@ public class Sender extends Thread {
                     System.out.println(print.bold(print.color("Empty messages not support!", Color.red)));
                     continue;
                 }
+                if (message.equals("/quit") || message.equals("/disconnect")) {
+                    stopSender();
+                    break;
+                }
                 OutboundMessage outboundMessage = new OutboundMessage(message, myUser.getName());
 
                 String packedMsg = outboundMessage.packMsg(keyStore);

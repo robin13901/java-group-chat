@@ -97,7 +97,7 @@ public class Server {
         broadcastMessage(print.bold(print.color("INFO " + userName + " disconnected from the chat.", Color.RED)));
 
         // inform clients that user left
-        broadcastMessage("DEL USER " + userName);
+        System.out.println(print.color("Removed user: " + userName, Color.RED));
     }
 
     public static void listenForUserInput() throws Exception {
