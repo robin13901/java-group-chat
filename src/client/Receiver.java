@@ -7,12 +7,15 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.util.Arrays;
+import java.util.Iterator;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import org.json.JSONObject;
+
+import util.MessageType;
 import util.Print;
 
 public class Receiver extends Thread {
@@ -29,25 +32,28 @@ public class Receiver extends Thread {
                 String message = inputStream.readUTF();
                 InboundMessage msg = new InboundMessage(message);
 
-                msg.unpackMsg();
-
                 switch (msg.getMessageType()) {
                     case MessageType.USER_MESSAGE -> {
-                        System.out.println(decryptMsg(msg.getMsgContent()));
+                        String decryptedMsg = decryptMsg(msg.getJsonObject());
+                        System.out.println(decryptedMsg);
                     }
                     case MessageType.DELETE_USER -> {
-                        deleteUser(msg.getMsgContent());
+                        deleteUser(msg.getJsonObject());
                     }
                     case MessageType.PUBLIC_KEY -> {
-                        addNewUser(msg.getMsgContent());
+                        addNewUser(msg.getJsonObject());
                     }
                     case MessageType.PUBLIC_KEYS -> {
-                        addAllUsers(msg.getMsgContent());
+                        addAllUsers(msg.getJsonObject());
                     }
                     case MessageType.SERVER_INFO -> {
-                        System.out.println(msg.getMsgContent());
+                        String serverInfoString = parseServerInfoMsg(msg.getJsonObject());
+                        System.out.println(serverInfoString);
                     }
-                    default -> System.out.println();
+                    case MessageType.UNKNOWN -> {
+                    }
+                    default -> {
+                    }
                 }
             } catch (IOException ex) {
                 System.err.println("An error occurred while receiving message: " + ex.getMessage());
@@ -72,79 +78,71 @@ public class Receiver extends Thread {
         }
     }
 
-    private void deleteUser(String userToRemove) {
-        keyStore.removePublicKeyOfUser(userToRemove);
+    private void deleteUser(JSONObject content) {
+        String userNameToDelete = content.getString("content");
+        keyStore.removePublicKeyOfUser(userNameToDelete);
     }
 
-    private void addNewUser(String userProps) {
-        String[] msg_split = userProps.split(" ");
-        for (String string : msg_split) {
-            if (string.equals("NEW") || string.equals("USER") || string.equals(myUser.getName())) {
-                continue;
-            }
-            String[] userKeyPair = string.split(":");
-            String userName = userKeyPair[0];
-            String userPublicKey = userKeyPair[1];
-            PublicKey pk = KeyGenerator.getPublicKeyFrom(userPublicKey);
-            keyStore.addPublicKey(userName, pk);
-        }
+    private void addNewUser(JSONObject content) {
+        JSONObject newUserData = content.getJSONObject("content");
+        String newUserName = newUserData.getString("name");
+        String newUserPublicKey = newUserData.getString("publicKey");
 
+        PublicKey publicKey = KeyGenerator.getPublicKeyFrom(newUserPublicKey);
+        keyStore.addPublicKey(newUserName, publicKey);
     }
 
-    private void addAllUsers(String usersProps) {
-        String[] msg_split = usersProps.split(" ");
-        for (String string : msg_split) {
-            if (string.equals("PUBLIC") || string.equals("KEYS") || string.equals(myUser.getName()))
-                continue;
-            String[] userKeyPair = string.split(":");
-            String userName = userKeyPair[0];
-            String userPublicKey = userKeyPair[1];
-            PublicKey pk = KeyGenerator.getPublicKeyFrom(userPublicKey);
-            keyStore.addPublicKey(userName, pk);
+    private void addAllUsers(JSONObject content) {
+        JSONObject allUserData = content.getJSONObject("content");
+
+        Iterator<String> allUserIter = allUserData.keys();
+        while (allUserIter.hasNext()) {
+            String userName = allUserIter.next();
+            PublicKey publicKey = KeyGenerator.getPublicKeyFrom(allUserData.getString(userName));
+            keyStore.addPublicKey(userName, publicKey);
         }
     }
 
-    private String decryptMsg(String rawMessage) {
+    private String parseServerInfoMsg(JSONObject content) {
+        String serverInfoMsg = content.getString("content");
+        return serverInfoMsg;
+    }
+
+    private String decryptMsg(JSONObject content) {
         StringBuilder formattedMessage = new StringBuilder();
-        String[] msg_split = rawMessage.split(" ");
 
-        if (msg_split.length < 5)
-            return rawMessage;
-
-        String senderName = msg_split[0];
-        String msgDate = msg_split[1];
-        String msgTime = msg_split[2];
+        String senderName = content.getString("senderName");
+        String timestamp = content.getString("timestamp");
 
         // format message meta data
         formattedMessage.append(print.bold(print.color(senderName, Color.BLUE)));
-        formattedMessage.append(print.color(": [", Color.GRAY));
-        formattedMessage.append(print.color(msgDate, Color.GRAY));
-        formattedMessage.append(print.color(" ", Color.GRAY));
-        formattedMessage.append(print.color(msgTime, Color.GRAY));
-        formattedMessage.append(print.color("] ", Color.GRAY));
+        formattedMessage.append(print.color(" [", Color.GRAY));
+        formattedMessage.append(print.color(timestamp, Color.GRAY));
+        formattedMessage.append(print.color("]: ", Color.GRAY));
 
         // generate subset only conatining message data
-        String[] messageData = Arrays.copyOfRange(msg_split, 3, msg_split.length);
+        JSONObject messageContent = content.getJSONObject("content");
 
         // decrypt message with this user private key
-        for (int i = 0; i < messageData.length; i += 2) {
-            String receiverName = messageData[i];
-            if (receiverName.equals(myUser.getName())) {
-                String encryptedMessage = messageData[i + 1];
+        Iterator<String> allUserIter = messageContent.keys();
+        while (allUserIter.hasNext()) {
+            String userName = allUserIter.next();
+            if (userName.equals(myUser.getName())) {
                 try {
                     byte[] decryptedMessageInBytes = CryptoService.decryptString(myUser.getPrivateKey(),
-                            encryptedMessage);
+                            messageContent.getString(userName));
+
                     String decryptedMessageString = new String(decryptedMessageInBytes);
 
                     formattedMessage.append(decryptedMessageString);
                 } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
                         | IllegalBlockSizeException
                         | BadPaddingException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    // Message was not for this user; should be handled otherwise
                 }
             }
         }
+
         return formattedMessage.toString();
     }
 }
