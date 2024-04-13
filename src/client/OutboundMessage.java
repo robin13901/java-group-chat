@@ -10,6 +10,10 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import org.json.JSONObject;
+
+import util.MessageType;
+
 public class OutboundMessage {
     private final String msg;
     private final Timestamp timestamp;
@@ -23,28 +27,28 @@ public class OutboundMessage {
 
     public String packMsg(KeyStore keyStore) {
         String encryptedMsg = "";
-        StringBuilder messageBuilder = new StringBuilder();
-        
+        JSONObject messageJSON = new JSONObject();
+        JSONObject messageDataJSON = new JSONObject();
+
         // message meta data
-        messageBuilder.append(this.userName);
-        messageBuilder.append(" ");
-        messageBuilder.append(this.timestamp);
+        messageJSON.put("msgType", MessageType.USER_MESSAGE);
+        messageJSON.put("senderName", this.userName);
+        messageJSON.put("timestamp", this.timestamp);
 
         // encrypted message per user who shoudl receive the message
         for (Map.Entry<String, PublicKey> entry : keyStore.getMap().entrySet()) {
             try {
                 encryptedMsg = CryptoService.encryptString(entry.getValue(), this.msg);
-
-                messageBuilder.append(" ");
-                messageBuilder.append(entry.getKey());
-                messageBuilder.append(" ");
-                messageBuilder.append(encryptedMsg);
-            } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+                messageDataJSON.put(entry.getKey(), encryptedMsg);
+            } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
+                    | BadPaddingException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
 
-        return messageBuilder.toString();
+        messageJSON.put("content", messageDataJSON);
+
+        return messageJSON.toString();
     }
 }
