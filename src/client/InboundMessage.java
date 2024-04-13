@@ -1,24 +1,23 @@
 package client;
 
-import java.util.Arrays;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import util.MessageType;
 
 public class InboundMessage {
-    private final String msg;
+    private final String msgString;
     private String content;
     private MessageType msgType;
+    private JSONObject msgJsonObject;
     
     public InboundMessage(String msg) {
-        this.msg = msg;
-    }
-
-    public void unpackMsg() {
-        String[] msg_split = msg.split(" ");
-        switch (msg_split[0]) {
-            case "DEL" -> parseDeleteUserPublicKey();
-            case "PUBLIC" -> parseUsersPublicKeys();
-            case "NEW" -> parseUserPublicKey();
-            case "INFO" -> parseInfoMsg();
-            default -> parseMsg();
+        this.msgString = msg;
+        this.msgJsonObject = new JSONObject(this.msgString);
+        try {
+            this.msgType = this.msgJsonObject.getEnum(MessageType.class, "msgType");   
+        } catch (JSONException e) {
+            this.msgType = MessageType.UNKNOWN;
         }
     }
 
@@ -30,34 +29,7 @@ public class InboundMessage {
         return this.msgType;
     }
 
-    private void parseUserPublicKey() {
-        String[] msg_split = this.msg.split(" ");
-        content = msg_split[2];
-
-        this.msgType = MessageType.PUBLIC_KEY;
-    }
-
-    private void parseUsersPublicKeys() {
-        String[] msg_split = this.msg.split(" ");
-        content = String.join(" ", Arrays.copyOfRange(msg_split, 2, msg_split.length));
-
-        this.msgType = MessageType.PUBLIC_KEYS;
-    }
-
-    private void parseDeleteUserPublicKey() {
-        String[] msg_split = this.msg.split(" ");
-        content = msg_split[2];
-
-        this.msgType = MessageType.DELETE_USER;
-    }
-
-    private void parseInfoMsg() {
-        this.content = this.msg;
-        this.msgType = MessageType.SERVER_INFO;
-    }
-
-    private void parseMsg() {
-        this.content = this.msg;
-        this.msgType = MessageType.USER_MESSAGE;
+    public JSONObject getJsonObject() {
+        return this.msgJsonObject;
     }
 }
