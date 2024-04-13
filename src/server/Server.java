@@ -12,6 +12,9 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.json.JSONObject;
+
+import util.MessageType;
 import util.Print;
 
 public class Server {
@@ -58,28 +61,54 @@ public class Server {
         return null;
     }
 
-    public static void addUser(String userName, String userEmail, String userIp, int userPort, String publicKeyString)
-            throws IOException {
+    public static void addUser(String userName, String userEmail, String userIp, int userPort, String publicKeyString) throws IOException {
+        // Broadcast: new user
+        JSONObject connectionInfoJson = new JSONObject();
+        connectionInfoJson.put("msgType", MessageType.SERVER_INFO);
+        connectionInfoJson.put("content", print.bold(print.color("INFO: " + userName + " has connected.", Color.GREEN)));
+        broadcastMessage(connectionInfoJson.toString());
+
+        keyStore.addPublicKey(userName, getKey(publicKeyString));
+
+        // Send public key of new user to all current clients
+        JSONObject newUserBroadcastJson = new JSONObject();
+        newUserBroadcastJson.put("msgType", MessageType.PUBLIC_KEY);
+
+        JSONObject newUserDataJson = new JSONObject();
+        newUserDataJson.put("name", userName);
+        newUserDataJson.put("publicKey",
+                Base64.getEncoder().encodeToString(keyStore.getPublicKeyForUser(userName).getEncoded()));
+
+        newUserBroadcastJson.put("content", newUserDataJson);
+
+        broadcastMessage(newUserBroadcastJson.toString());
+
+        // create new user
         ChatUser newUser = new ChatUser(userName, userEmail, userIp, userPort);
         Thread userThread = new Thread(newUser);
         userList.add(newUser);
         userThread.start();
-        broadcastMessage(print.bold(print.color("INFO " + userName + " has connected.", Color.GREEN)));
-        keyStore.addPublicKey(userName, getKey(publicKeyString));
 
         // send public keys of all users to newly connected user and update all users
         // with new public key of joined user
-        StringBuilder publicKeyStrings = new StringBuilder();
-        publicKeyStrings.append("PUBLIC KEYS ");
-        for (Map.Entry<String, PublicKey> entry : keyStore.getMap().entrySet()) {
-            publicKeyStrings
-                    .append(entry.getKey() + ":" + Base64.getEncoder().encodeToString(entry.getValue().getEncoded()));
-            publicKeyStrings.append(" ");
-        }
-        newUser.sendMessage(publicKeyStrings.toString());
+        JSONObject publicKeysJson = new JSONObject();
+        publicKeysJson.put("msgType", MessageType.PUBLIC_KEYS);
 
-        broadcastMessage("NEW USER " + userName + ":"
-                + Base64.getEncoder().encodeToString(keyStore.getPublicKeyForUser(userName).getEncoded()));
+        JSONObject publicKeysDataJson = new JSONObject();
+        StringBuilder currentClientNames = new StringBuilder();
+        for (Map.Entry<String, PublicKey> entry : keyStore.getMap().entrySet()) { 
+            // here we could not send the new user, so that one user receives its own messages. If we dont add the new user, then we have to consider this in the receiver as well, since an empty message would appear
+            publicKeysDataJson.put(entry.getKey(), Base64.getEncoder().encodeToString(entry.getValue().getEncoded()));
+            currentClientNames.append(entry.getKey() + ", ");
+        }
+        publicKeysJson.put("content", publicKeysDataJson);
+
+        JSONObject publicKeysInfoJson = new JSONObject();
+        publicKeysInfoJson.put("msgType", MessageType.SERVER_INFO);
+        publicKeysInfoJson.put("content", print.bold(print.color("Active Users: " + currentClientNames.toString(), Color.GREEN)));
+
+        newUser.sendMessage(publicKeysJson.toString());
+        newUser.sendMessage(publicKeysInfoJson.toString());
     }
 
     static void broadcastMessage(String message) throws IOException {
@@ -94,9 +123,20 @@ public class Server {
         userToRemove.stopUser();
         userList.remove(userToRemove);
         keyStore.removePublicKeyOfUser(userName);
-        broadcastMessage(print.bold(print.color("INFO " + userName + " disconnected from the chat.", Color.RED)));
 
         // inform clients that user left
+        JSONObject leftUserInfoMsgJson = new JSONObject();
+        leftUserInfoMsgJson.put("msgType", MessageType.SERVER_INFO);
+        leftUserInfoMsgJson.put("content",
+                print.bold(print.color("INFO " + userName + " disconnected from the chat.", Color.RED)));
+        broadcastMessage(leftUserInfoMsgJson.toString());
+
+        // Command: remove key of removed user
+        JSONObject rmvUserCmdJson = new JSONObject();
+        rmvUserCmdJson.put("msgType", MessageType.DELETE_USER);
+        rmvUserCmdJson.put("content", userName);
+        broadcastMessage(rmvUserCmdJson.toString());
+
         System.out.println(print.color("Removed user: " + userName, Color.RED));
     }
 
