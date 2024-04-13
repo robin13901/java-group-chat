@@ -37,7 +37,7 @@ public class Registrar implements Runnable {
 
                 if (!receivedMessage.isEmpty()) {
                     String[] userInfo = receivedMessage.split(",");
-                    Server.addUser(userInfo[0], userInfo[1], userInfo[3], Integer.parseInt(userInfo[2]));
+                    Server.addUser(userInfo[0], userInfo[1], userInfo[3], Integer.parseInt(userInfo[2]), userInfo[4]);
                 }
             }
             System.out.println("User registration is off");
