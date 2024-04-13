@@ -91,9 +91,13 @@ public class Server {
 
     static void removeUser(ChatUser userToRemove) throws IOException {
         String userName = userToRemove.getUserName();
-        broadcastMessage(print.bold(print.color(userName + " disconnected from the chat.", Color.RED)));
         userToRemove.stopUser();
         userList.remove(userToRemove);
+        keyStore.removePublicKeyOfUser(userName);
+        broadcastMessage(print.bold(print.color("INFO " + userName + " disconnected from the chat.", Color.RED)));
+
+        // inform clients that user left
+        broadcastMessage("DEL USER " + userName);
     }
 
     public static void listenForUserInput() throws Exception {
