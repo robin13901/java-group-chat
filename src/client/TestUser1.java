@@ -12,10 +12,10 @@ public class TestUser1 extends Client {
         sendConnectionDetails(serverSocket.getLocalPort(), serverSocket.getInetAddress().getHostName());
         socket = serverSocket.accept();
         System.out.println("Connected!");
-        sender = new Sender();
+        sender = new Sender(user);
         Thread senderThread = new Thread(sender);
         senderThread.start();
-        receiver = new Receiver();
+        receiver = new Receiver(user);
         Thread receiverThread = new Thread(receiver);
         receiverThread.start();
     }

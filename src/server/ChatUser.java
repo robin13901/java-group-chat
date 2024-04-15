@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import util.Print;
+
 public class ChatUser extends Thread {
     private Print print;
     private String userName;
@@ -48,7 +50,7 @@ public class ChatUser extends Thread {
                 }
 
                 System.out.println(print.color(this.userName + ": ", Color.ORANGE) + message);
-                Server.broadcastMessage(print.color(this.userName + ": ", Color.ORANGE) + message);
+                Server.broadcastMessage(message); // print.color(this.userName + " ", Color.ORANGE) +
 
             } catch (IOException ex) {
                 System.out.println(this.getUserName() + " disconnected.");

@@ -1,7 +1,12 @@
 package client;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Base64;
 
 public class Client {
 
@@ -20,10 +25,11 @@ public class Client {
         sendConnectionDetails(serverSocket.getLocalPort(), serverSocket.getInetAddress().getHostName());
         socket = serverSocket.accept();
         System.out.println("Connected!");
-        sender = new Sender();
+        KeyStore keyStore = new KeyStore();
+        sender = new Sender(keyStore);
         Thread senderThread = new Thread(sender);
         senderThread.start();
-        receiver = new Receiver();
+        receiver = new Receiver(keyStore);
         Thread receiverThread = new Thread(receiver);
         receiverThread.start();
     }
@@ -31,7 +37,7 @@ public class Client {
     static void sendConnectionDetails(int port, String hostname) {
         try (DatagramSocket datagramSocket = new DatagramSocket()) {
             InetAddress multicastGroup = InetAddress.getByName(MULTICAST_ADDRESS);
-            String message = user.getName() + "," + user.getEmail() + "," + port + "," + hostname;
+            String message = user.getName() + "," + user.getEmail() + "," + port + "," + hostname + "," + Base64.getEncoder().encodeToString(user.getPublicKey().getEncoded());
             byte[] data = message.getBytes();
             DatagramPacket datagramPacket = new DatagramPacket(data, data.length, multicastGroup, PORT);
             datagramSocket.send(datagramPacket);
