@@ -25,11 +25,11 @@ public class Client {
         sendConnectionDetails(serverSocket.getLocalPort(), serverSocket.getInetAddress().getHostName());
         socket = serverSocket.accept();
         System.out.println("Connected!");
-        KeyStore keyStore = new KeyStore();
-        sender = new Sender(keyStore);
+        User user = new User("ClientTestUser", "client.test@user.de");
+        sender = new Sender(user);
         Thread senderThread = new Thread(sender);
         senderThread.start();
-        receiver = new Receiver(keyStore);
+        receiver = new Receiver(user);
         Thread receiverThread = new Thread(receiver);
         receiverThread.start();
     }
