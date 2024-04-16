@@ -57,3 +57,27 @@ Zur Verschlüsselung der Nachrichten im Java-Groupchat wird das RSA Verfahren ve
 ![Architektur der Verschlüsselung](assets/java-group-chat-Verschlüsselung.png)
 
 ### Server-Client-Architektur
+
+Die Server-Client-Architektur des Java-Groupchats ermöglicht die Kommunikation zwischen mehreren Clients über einen zentralen Server. Hier sind die Schlüsselprinzipien:
+
+*Server-Client-Verbindungsaufbau:*
+- Der Server wird gestartet und wartet auf eingehende Verbindungen von Clients.
+- Clients initiieren eine Verbindung mit dem Server, um sich zu registrieren und am Gruppenchat teilzunehmen.
+
+*Client-Registrierung:*
+- Bei der Registrierung meldet sich ein Client beim Server an und sendet seine Benutzerinformationen, einschließlich Benutzername und Public Key für die Verschlüsselung.
+- Der Server registriert den Client und speichert seine Benutzerinformationen für zukünftige Kommunikation.
+
+*Schlüsselaustausch:*
+- Während der Registrierung erfolgt ein Schlüsselaustausch, bei dem der Client seinen Public Key an den Server sendet. Der Server verteilt dann diesen Public Key an alle anderen Clients im Chat.
+- Dies ermöglicht es jedem Client, Nachrichten sicher zu verschlüsseln, um die Privatsphäre und Sicherheit der Kommunikation zu gewährleisten.
+
+*Nachrichtenübertragung:*
+- Ein Client kann eine Nachricht an den Server senden, die dann an alle anderen Clients weitergeleitet wird.
+- Die Nachricht wird mit den Public Keys der anderen Clients verschlüsselt, um sicherzustellen, dass nur die beabsichtigten Empfänger sie entschlüsseln können.
+
+*Client-Disconnect:*
+- Clients haben die Möglichkeit, sich vom Server abzumelden und die Verbindung zu beenden, wenn sie den Gruppenchat verlassen möchten.
+- Der Server aktualisiert seine Liste registrierter Clients entsprechend und informiert die anderen Clients über Änderungen in der Teilnehmerliste.
+
+Die Server-Client-Architektur ermöglicht eine effiziente und sichere Kommunikation zwischen den Teilnehmern des Groupchats, wobei der Server als Vermittler fungiert und die Nachrichtenübertragung koordiniert.
