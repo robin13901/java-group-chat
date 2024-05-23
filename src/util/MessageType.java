@@ -6,5 +6,6 @@ public enum MessageType {
     PUBLIC_KEYS,
     SERVER_INFO,
     USER_MESSAGE,
+    CLOSE_CONNECTION,
     UNKNOWN;
 }

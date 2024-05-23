@@ -157,11 +157,14 @@ public class Server {
 
     public static void shutDownServer() {
         try {
-            broadcastMessage("/offline");
+            JSONObject closeConnectionInfoJson = new JSONObject();
+            closeConnectionInfoJson.put("msgType", MessageType.CLOSE_CONNECTION);
+            closeConnectionInfoJson.put("content", print.bold(print.color("Server closed the connection!", Color.RED)));
+            broadcastMessage(closeConnectionInfoJson.toString());
             registrar.stopUserRegistration();
-            for (ChatUser user : userList) {
-                user.stopUser();
-            }
+            // for (ChatUser user : userList) {
+            //     user.stopUser();
+            // }
             userList.clear();
             admin.stopAdminThread();
             System.out.println("Server is offline");

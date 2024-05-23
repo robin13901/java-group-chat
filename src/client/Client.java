@@ -27,10 +27,12 @@ public class Client {
         System.out.println("Connected!");
         User user = new User("ClientTestUser", "client.test@user.de");
         sender = new Sender(user);
-        Thread senderThread = new Thread(sender);
-        senderThread.start();
         receiver = new Receiver(user);
+        Thread senderThread = new Thread(sender);
         Thread receiverThread = new Thread(receiver);
+        sender.setReceiverObject(receiver);
+        receiver.setSenderThread(sender);
+        senderThread.start();
         receiverThread.start();
     }
 

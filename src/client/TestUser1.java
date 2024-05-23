@@ -13,10 +13,12 @@ public class TestUser1 extends Client {
         socket = serverSocket.accept();
         System.out.println("Connected!");
         sender = new Sender(user);
-        Thread senderThread = new Thread(sender);
-        senderThread.start();
         receiver = new Receiver(user);
+        Thread senderThread = new Thread(sender);
         Thread receiverThread = new Thread(receiver);
+        sender.setReceiverObject(receiver);
+        receiver.setSenderThread(sender);
+        senderThread.start();
         receiverThread.start();
     }
 

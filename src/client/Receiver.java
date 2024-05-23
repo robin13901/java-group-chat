@@ -24,10 +24,11 @@ public class Receiver extends Thread {
     private KeyStore keyStore;
     private User myUser;
     private Print print;
+    private Sender senderObject;
 
     @Override
     public void run() {
-        while (shouldRun) {
+        while (shouldRun && !isInterrupted()) {
             try {
                 String message = inputStream.readUTF();
                 InboundMessage msg = new InboundMessage(message);
@@ -50,6 +51,11 @@ public class Receiver extends Thread {
                         String serverInfoString = parseServerInfoMsg(msg.getJsonObject());
                         System.out.println(serverInfoString);
                     }
+                    case MessageType.CLOSE_CONNECTION -> {
+                        String serverInfoString = parseServerInfoMsg(msg.getJsonObject());
+                        System.out.println(serverInfoString);
+                        stopReceiver();
+                    }
                     case MessageType.UNKNOWN -> {
                     }
                     default -> {
@@ -69,12 +75,28 @@ public class Receiver extends Thread {
         this.print = Print.getInstance();
     }
 
-    public void stopReceiver() {
+    public void setSenderThread(Sender senderObject) {
+        this.senderObject = senderObject;
+    }
+
+    private void stopReceiver() {
         shouldRun = false;
         try {
             inputStream.close();
         } catch (IOException ex) {
             System.err.println("An error occurred while closing receiver input stream: " + ex.getMessage());
+        }
+        senderObject.stopSenderExtern();
+    }
+
+    public boolean stopReceiverExtern() {
+        shouldRun = false;
+        try {
+            inputStream.close();
+            return true;
+        } catch (IOException ex) {
+            System.err.println("An error occurred while closing receiver input stream: " + ex.getMessage());
+            return false;
         }
     }
 

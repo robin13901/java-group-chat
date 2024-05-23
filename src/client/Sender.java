@@ -7,6 +7,9 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.json.JSONObject;
+
+import util.MessageType;
 import util.Print;
 
 public class Sender extends Thread {
@@ -16,6 +19,7 @@ public class Sender extends Thread {
     private KeyStore keyStore;
     private User myUser;
     private Print print;
+    private Receiver receiverObject;
 
     public Sender(User myUser) {
         this.keyStore = myUser.getKeyStore();
@@ -23,10 +27,14 @@ public class Sender extends Thread {
         this.print = Print.getInstance();
     }
 
+    public void setReceiverObject(Receiver receiverObject) {
+        this.receiverObject = receiverObject;
+    }
+
     public void run() {
         try (Scanner scanner = new Scanner(System.in)) {
             outputStream = new DataOutputStream(Client.socket.getOutputStream());
-            while (shouldRun) {
+            while (shouldRun && !isInterrupted()) {
                 String message = scanner.nextLine();
                 if (message.isEmpty()) {
                     System.out.println(print.bold(print.color("Empty messages not support!", Color.red)));
@@ -56,14 +64,30 @@ public class Sender extends Thread {
         }
     }
 
-    public void stopSender() {
-        sendMsg("/disconnected");
+    private void stopSender() {
+        JSONObject clientDisconnectInfoJson = new JSONObject();
+        clientDisconnectInfoJson.put("msgType", MessageType.CLOSE_CONNECTION);
+        clientDisconnectInfoJson.put("userName", myUser.getName());
+        sendMsg(clientDisconnectInfoJson.toString());
         shouldRun = false;
         try {
             outputStream.close();
         } catch (IOException ex) {
             System.out.println("An error occurred while closing sender output stream: " + ex.getMessage());
         }
+        receiverObject.stopReceiverExtern();
         System.out.println("Sender closed");
+    }
+
+    public boolean stopSenderExtern() {
+        shouldRun = false;
+        try {
+            outputStream.close();
+            System.out.println("Sender closed");
+            return true;
+        } catch (IOException ex) {
+            System.out.println("An error occurred while closing sender output stream: " + ex.getMessage());
+            return false;
+        }
     }
 }

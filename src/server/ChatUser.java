@@ -9,6 +9,10 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import util.MessageType;
 import util.Print;
 
 public class ChatUser extends Thread {
@@ -44,9 +48,14 @@ public class ChatUser extends Thread {
             try {
                 String message = inputStream.readUTF();
 
-                if (message.equals("/disconnected")) {
-                    Server.removeUser(this);
-                    break;
+                try {
+                    JSONObject messageJson = new JSONObject(message);
+                    if (messageJson.getEnum(MessageType.class, "msgType").equals(MessageType.CLOSE_CONNECTION)) {
+                        Server.removeUser(this);
+                        break;
+                    }
+                } catch (JSONException e) {
+                    // do nothing and continue
                 }
 
                 System.out.println(print.color(this.userName + ": ", Color.ORANGE) + message);
