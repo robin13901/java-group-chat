@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +30,13 @@ public class Registrar implements Runnable {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 try {
                     multicastSocket.receive(packet);
+                } catch (SocketException sex) {
+                    // If Server is closed via stopAdminThread(), then isRunning is false and the server must be closed. 
+                    // If isRunning is true, an actual error occured
+                    if (isRunning) {
+                        Logger.getLogger(Registrar.class.getName()).log(Level.SEVERE, "A PROBLEM OCCURED", sex);
+                    }
+                    return;
                 } catch (IOException ex) {
                     Logger.getLogger(Registrar.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -41,6 +50,8 @@ public class Registrar implements Runnable {
                 }
             }
             System.out.println("User registration is off");
+        } catch (SocketException sex) {
+            // DO NOTHING
         } catch (IOException ex) {
             Logger.getLogger(Registrar.class.getName()).log(Level.SEVERE, null, ex);
         }

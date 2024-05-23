@@ -3,6 +3,7 @@ package server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +33,13 @@ public class Admin extends Thread {
                     }
 
                     clientSocket.getOutputStream().write(httpResponse.toString().getBytes(StandardCharsets.UTF_8));
+                } catch (SocketException sex) {
+                    // If Server is closed via stopAdminThread(), then isRunning is false and the server must be closed. 
+                    // If isRunning is true, an actual error occured
+                    if (isRunning) {
+                        Logger.getLogger(Registrar.class.getName()).log(Level.SEVERE, "A PROBLEM OCCURED", sex);
+                    }
+                    return;
                 } catch(Exception e) {
                     Logger.getLogger(Admin.class.getName()).log(Level.SEVERE, null, e);
                 }
