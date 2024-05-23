@@ -25,6 +25,8 @@ Verteilte Systeme, Semester 6, DHBW Karlsruhe
 
 <u>Geschätzer Zeitaufwand:</u> 20 PS
 
+<u>Besonderen Fokus haben wir gelegt auf:</u> die Verschlüsselung der Nachrichten durch den RSA Algorithmus
+
 ### Ausführung
 
 1. Starte Server
